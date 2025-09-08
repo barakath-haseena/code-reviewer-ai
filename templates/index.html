@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI + Rule-Based Code Reviewer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f6fa;
+            color: #2d3436;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 40px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            position: relative;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 50px;
+            font-size: 2.2em;
+            font-weight: 600;
+        }
+
+        label {
+            font-weight: 500;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #dcdde1;
+            resize: vertical;
+            font-family: monospace;
+            font-size: 1em;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        input[type="file"] {
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: #fff;
+            padding: 14px 30px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.05em;
+            font-weight: 500;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .loader {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.8);
+            z-index: 10;
+            justify-content: center;
+            align-items: center;
+            border-radius: 12px;
+        }
+
+        .loader div {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI + Rule-Based Code Reviewer</h1>
+
+        <form id="review-form" action="/review" method="POST" enctype="multipart/form-data">
+            <label for="code">Paste Your Python Code:</label>
+            <textarea name="code" id="code" placeholder="Paste your code here..."></textarea>
+
+            <label for="file">Or Upload Python File:</label>
+            <input type="file" name="file" id="file" accept=".py">
+
+            <button type="submit">Review Code</button>
+        </form>
+
+        <div class="loader" id="loader">
+            <div></div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file');
+        const textarea = document.getElementById('code');
+        const form = document.getElementById('review-form');
+        const loader = document.getElementById('loader');
+
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file && file.name.endsWith('.py')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    textarea.value = e.target.result;
+                }
+                reader.readAsText(file);
+            } else {
+                alert("Please select a valid Python (.py) file.");
+            }
+        });
+
+        form.addEventListener('submit', function() {
+            loader.style.display = "flex";
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Code Review Feedback</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f6fa;
+            color: #2d3436;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 50px auto;
+            padding: 40px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 40px;
+            font-size: 2.2em;
+            font-weight: 600;
+        }
+
+        h3 {
+            margin-top: 30px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .diff-container {
+            display: flex;
+            border: 1px solid #ddd;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .diff-column {
+            flex: 1;
+            overflow-x: auto;
+            background-color: #ffffff;
+            padding: 10px;
+        }
+
+        .diff-line {
+            display: grid;
+            grid-template-columns: 50px 1fr;
+            align-items: start;
+            line-height: 1.2;
+        }
+
+        .line-number {
+            width: 40px;
+            text-align: right;
+            padding-right: 10px;
+            user-select: none;
+            color: #999;
+        }
+
+        .diff-code {
+            flex: 1;
+            white-space: pre;
+        }
+
+        .diff-add {
+            background-color: #e6ffed;
+            color: #24292f;
+        }
+
+        .diff-remove {
+            background-color: #ffeef0;
+            color: #24292f;
+        }
+
+        .feedback-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .ai-feedback, .ai-error {
+            background-color: #fee2e2;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            color: red;
+        }
+
+        .rule-feedback {
+            background-color: #fff7e6;
+            box-shadow: 0 4px 12px rgba(241,196,15,0.1);
+        }
+
+        .complexity-feedback {
+            background-color: #f0f0f0;
+            box-shadow: 0 4px 12px rgba(128,128,128,0.1);
+        }
+
+        .style-feedback {
+            background-color: #e8f5e9;
+            box-shadow: 0 4px 12px rgba(46,125,50,0.1);
+        }
+
+        .rule-feedback ul, 
+        .complexity-feedback ul, 
+        .style-feedback ul {
+            padding-left: 18px;
+            margin: 0;
+            list-style: disc;
+        }
+
+        .rule-feedback li, 
+        .complexity-feedback li, 
+        .style-feedback li {
+            margin: 6px 0;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .feedback-box p {
+            margin: 0;
+        }
+
+        .back-btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: #3498db;
+            color: #fff;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .back-btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        /* Browser vs PDF toggle */
+        .only-browser { display: block; }
+        .only-pdf { display: none; }
+        @media print {
+            .only-browser { display: none; }
+            .only-pdf { display: block; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Review Results</h2>
+
+        <h3>Before / After Code Diff</h3>
+        {% if formatted_code %}
+        <div class="diff-container">
+            <div class="diff-column">
+                <h4>Original Code</h4>
+                {% for line in formatted_code['original_raw'].splitlines() %}
+                <div class="diff-line">
+                    <span class="line-number">{{ loop.index }}</span>
+                    <span class="diff-code">{{ line|e }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="diff-column">
+                <h4>Formatted Code</h4>
+                {% for line in formatted_code['formatted_raw'].splitlines() %}
+                <div class="diff-line">
+                    <span class="line-number">{{ loop.index }}</span>
+                    <span class="diff-code">{{ line|e }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <p>⚠️ No formatting results available.</p>
+        {% endif %}
+
+
+        <h3>AI Reviewer Feedback:</h3>
+        {% if ai_feedback and "⚠️ AI Reviewer could not complete" in ai_feedback %}
+            <div class="feedback-box ai-error">{{ ai_feedback }}</div>
+        {% elif ai_feedback %}
+            <div class="feedback-box ai-feedback">{{ ai_feedback }}</div>
+        {% else %}
+            <div class="feedback-box ai-feedback"><p>No AI feedback available.</p></div>
+        {% endif %}
+
+        <h3>Rule-Based Feedback:</h3>
+        <div class="feedback-box rule-feedback">
+            {% if rule_feedback %}
+                <ul>
+                {% for fb in rule_feedback %}
+                    <li>{{ fb }}</li>
+                {% endfor %}
+                </ul>
+            {% else %}
+                <p>No rule-based issues detected.</p>
+            {% endif %}
+        </div>
+
+        <h3>Complexity Feedback:</h3>
+        <div class="feedback-box complexity-feedback">
+            {% if complexity_feedback %}
+                <ul>
+                {% for fb in complexity_feedback %}
+                    <li>{{ fb }}</li>
+                {% endfor %}
+                </ul>
+            {% else %}
+                <p>No high complexity functions detected.</p>
+            {% endif %}
+        </div>
+
+        <h3>Style Feedback</h3>
+        <div class="feedback-box style-feedback">
+            {% if flake8_feedback %}
+                <h4>Flake8:</h4>
+                <p style="white-space: pre-wrap;">{{ flake8_feedback }}</p>
+            {% else %}
+                <p>No style issues detected.</p>
+            {% endif %}
+        </div>
+
+        <h3>Code Formatting</h3>
+        <div class="feedback-box style-feedback">
+            <h4>Formatted Code (Black):</h4>
+            {% if formatted_code and formatted_code['formatted'] %}
+                <p style="white-space: pre-wrap;">{{ formatted_code['formatted'] }}</p>
+            {% else %}
+                <p>✅ Code already well formatted.</p>
+            {% endif %}
+        </div>
+
+        {% if not export_mode %}
+        <div class="no-print">
+            <a href="{{ url_for('download_report') }}" class="back-btn">📄 Download Report</a>
+            <a href="{{ url_for('review') }}" class="back-btn">⬅ Back</a>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
